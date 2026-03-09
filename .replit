@@ -1,4 +1,4 @@
-run = "python3 main.py"
+run = "pip install -r requirements.txt -q && python3 main.py"
 entrypoint = "main.py"
 modules = ["python-3.11"]
 
