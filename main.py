@@ -48,10 +48,6 @@ def solve():
     cookie = request.form.get('cookie', '').strip()
     puzzle_date = request.form.get('date', '').strip() or None
 
-    if not cookie:
-        return render_template('index.html', today=today,
-                               error='Please enter your NYT-S cookie.')
-
     # Validate date format if provided
     if puzzle_date:
         try:
@@ -67,7 +63,7 @@ def solve():
 
     try:
         solver = NYTMiniSolver(verbose=False)
-        solver.fetch_nyt_puzzle(cookie=cookie, puzzle_date=puzzle_date)
+        solver.fetch_nyt_puzzle(cookie=cookie or None, puzzle_date=puzzle_date)
         solver.solve(max_iterations=5)
     except SystemExit as e:
         sys.stdout = old_stdout

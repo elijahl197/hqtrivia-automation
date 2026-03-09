@@ -144,32 +144,34 @@ class NYTMiniSolver:
     # Input: NYT API                                                       #
     # ------------------------------------------------------------------ #
 
-    def fetch_nyt_puzzle(self, cookie: str, puzzle_date: str = None):
+    def fetch_nyt_puzzle(self, cookie: str = None, puzzle_date: str = None):
         """
         Fetch a Mini puzzle from the NYT crossword API.
 
         Args:
-            cookie:      The value of the NYT-S session cookie.
+            cookie:      The value of the NYT-S session cookie (optional — tried without first).
             puzzle_date: ISO date string (YYYY-MM-DD).  Defaults to today.
         """
         if puzzle_date is None:
             puzzle_date = date.today().strftime('%Y-%m-%d')
 
-        # Strip "NYT-S=" prefix in case the user pasted the full cookie string
-        if cookie.startswith('NYT-S='):
-            cookie = cookie[len('NYT-S='):]
-
         url = f'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{puzzle_date}.json'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Cookie': f'NYT-S={cookie}',
         }
+
+        # If a cookie was supplied, attach it; otherwise try without auth first
+        if cookie:
+            # Strip "NYT-S=" prefix in case the user pasted the full cookie string
+            if cookie.startswith('NYT-S='):
+                cookie = cookie[len('NYT-S='):]
+            headers['Cookie'] = f'NYT-S={cookie}'
 
         print(f"Fetching NYT Mini for {puzzle_date}…")
         resp = requests.get(url, headers=headers, timeout=10)
 
         if resp.status_code == 401:
-            print("ERROR: NYT returned 401 – check your NYT-S cookie value.")
+            print("ERROR: NYT returned 401 – a valid NYT-S cookie is required.")
             sys.exit(1)
         resp.raise_for_status()
 
