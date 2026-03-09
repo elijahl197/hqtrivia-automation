@@ -155,9 +155,13 @@ class NYTMiniSolver:
         if puzzle_date is None:
             puzzle_date = date.today().strftime('%Y-%m-%d')
 
-        url = f'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini.json'
+        # Strip "NYT-S=" prefix in case the user pasted the full cookie string
+        if cookie.startswith('NYT-S='):
+            cookie = cookie[len('NYT-S='):]
+
+        url = f'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{puzzle_date}.json'
         headers = {
-            'User-Agent': 'Mozilla/5.0 (compatible; NYTMiniSolver/1.0)',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Cookie': f'NYT-S={cookie}',
         }
 
