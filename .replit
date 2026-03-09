@@ -1,0 +1,13 @@
+run = "python3 main.py"
+entrypoint = "main.py"
+modules = ["python-3.11"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["python3", "main.py"]
+
+[[ports]]
+localPort = 8080
+externalPort = 80
