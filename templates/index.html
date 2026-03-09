@@ -55,9 +55,7 @@
     }
     input:focus { outline: none; border-color: #4a90d9; }
 
-    .hint {
-      font-size: .78rem; color: #888; margin-top: .3rem;
-    }
+    .hint { font-size: .78rem; color: #888; margin-top: .3rem; }
 
     .btn {
       display: block; width: 100%; padding: .75rem;
@@ -77,8 +75,47 @@
       color: #c0392b; font-size: .9rem; margin-bottom: 1.25rem;
     }
 
-    /* ---- cookie help ---- */
-    details { margin-top: .25rem; }
+    /* ---- bookmarklet section ---- */
+    .bm-card {
+      background: #f0f7ff;
+      border: 1.5px solid #c8dff8;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 1.25rem;
+    }
+    .bm-card h2 { color: #1a5fa8; margin-bottom: .4rem; }
+    .bm-card p { font-size: .85rem; color: #444; line-height: 1.5; margin-bottom: .75rem; }
+    .bm-card p strong { color: #1a1a1a; }
+
+    .bm-steps { font-size: .85rem; color: #444; padding-left: 1.2rem; margin-bottom: .75rem; line-height: 1.9; }
+
+    .bm-link-wrap {
+      background: #fff; border: 1.5px dashed #90b8e8;
+      border-radius: 8px; padding: .6rem .85rem;
+      font-family: monospace; font-size: .78rem;
+      word-break: break-all; color: #333;
+      margin-bottom: .6rem; cursor: text;
+    }
+
+    .bm-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .bm-btn {
+      padding: .4rem .9rem;
+      border: 1.5px solid #90b8e8; border-radius: 8px;
+      background: #fff; color: #1a5fa8;
+      font-size: .82rem; font-weight: 600; cursor: pointer;
+      transition: background .12s;
+    }
+    .bm-btn:hover { background: #e8f2ff; }
+    .bm-btn.primary { background: #1a5fa8; color: #fff; border-color: #1a5fa8; }
+    .bm-btn.primary:hover { background: #1450a0; }
+
+    .bm-note {
+      font-size: .76rem; color: #888; margin-top: .5rem;
+      line-height: 1.5;
+    }
+
+    /* ---- details / collapse ---- */
+    details { margin-top: .5rem; }
     summary {
       font-size: .82rem; color: #4a90d9; cursor: pointer;
       list-style: none; display: inline-flex; align-items: center; gap: .3rem;
@@ -89,7 +126,7 @@
       border-top: 1px solid #eee; padding-top: .75rem;
     }
     .help-body ol { padding-left: 1.2rem; line-height: 1.8; }
-    .bookmarklet-box {
+    .code-box {
       background: #f5f5f0; border-radius: 8px;
       padding: .6rem .8rem; margin-top: .75rem;
       font-family: monospace; font-size: .78rem;
@@ -114,17 +151,14 @@
 
     /* ---- grid ---- */
     .grid-wrap { overflow-x: auto; margin-bottom: 1.25rem; }
-    table.grid {
-      border-collapse: collapse;
-      margin: 0 auto;
-    }
+    table.grid { border-collapse: collapse; margin: 0 auto; }
     table.grid td {
       width: 44px; height: 44px;
       border: 1.5px solid #999;
       text-align: center; vertical-align: middle;
       font-size: 1.1rem; font-weight: 700; letter-spacing: .02em;
     }
-    td.black { background: #1a1a1a; border-color: #1a1a1a; }
+    td.black  { background: #1a1a1a; border-color: #1a1a1a; }
     td.filled { background: #fff; color: #1a1a1a; }
     td.empty  { background: #fffbea; color: #bbb; }
 
@@ -136,10 +170,10 @@
       font-size: .9rem;
     }
     .clue-list li:last-child { border-bottom: none; }
-    .clue-num { min-width: 1.6rem; font-weight: 600; color: #888; }
-    .clue-text { flex: 1; color: #444; }
+    .clue-num    { min-width: 1.6rem; font-weight: 600; color: #888; }
+    .clue-text   { flex: 1; color: #444; }
     .clue-answer { font-weight: 700; letter-spacing: .06em; }
-    .clue-answer.solved { color: #1a7a3c; }
+    .clue-answer.solved   { color: #1a7a3c; }
     .clue-answer.unsolved { color: #c0392b; }
 
     .col2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -156,7 +190,7 @@
     /* ---- loading overlay ---- */
     #loading {
       display: none; position: fixed; inset: 0;
-      background: rgba(245,245,240,.85);
+      background: rgba(245,245,240,.88);
       align-items: center; justify-content: center;
       flex-direction: column; gap: .75rem;
       font-size: 1rem; font-weight: 500; color: #333;
@@ -178,7 +212,7 @@
 
 <div id="loading">
   <div class="spinner"></div>
-  <span>Solving… this takes ~20–30 seconds</span>
+  <span id="loading-msg">Solving… this takes ~20–30 seconds</span>
 </div>
 
 <div class="container">
@@ -191,6 +225,45 @@
   {% if error %}
   <div class="error">{{ error }}</div>
   {% endif %}
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- One-click bookmarklet                                                -->
+  <!-- ------------------------------------------------------------------ -->
+  <div class="bm-card" id="bookmarklet-section">
+    <h2>One-click solver bookmarklet</h2>
+    <p>
+      Add this bookmarklet to your browser. After logging in to nytimes.com,
+      click it once — it opens this app with your cookie already filled in and
+      <strong>starts solving automatically</strong>.
+    </p>
+    <ol class="bm-steps">
+      <li>Click <strong>Copy bookmarklet</strong> below.</li>
+      <li>Create a new bookmark in your browser and paste it as the <strong>URL</strong>.</li>
+      <li>On any nytimes.com page, click the bookmark → puzzle solves instantly.</li>
+    </ol>
+
+    <div class="bm-link-wrap" id="bm-display">Generating…</div>
+    <div class="bm-actions">
+      <button class="bm-btn primary" onclick="copyBookmarklet()">Copy bookmarklet</button>
+      <button class="bm-btn" onclick="testBookmarklet()">Test it here</button>
+    </div>
+    <p class="bm-note">
+      The bookmarklet reads your NYT-S cookie from the browser and sends it to
+      this app via the URL hash — it never appears in server logs.
+    </p>
+
+    <details>
+      <summary>▶ iPad / iPhone instructions</summary>
+      <div class="help-body">
+        <ol>
+          <li>Tap <strong>Copy bookmarklet</strong> above.</li>
+          <li>In Safari, bookmark any page (tap Share → Add Bookmark).</li>
+          <li>Go to Bookmarks, find that bookmark, tap <strong>Edit</strong>, and replace the URL with what you copied.</li>
+          <li>On nytimes.com (while logged in), tap that bookmark → puzzle solves in a new tab.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
 
   <!-- ------------------------------------------------------------------ -->
   <!-- Form                                                                 -->
@@ -207,24 +280,10 @@
           <button type="button" class="toggle-eye" aria-label="Show/hide cookie"
                   onclick="toggleCookie()">👁</button>
         </div>
-        <p class="hint">Found in browser cookies after logging in to nytimes.com.</p>
-        <details>
-          <summary>▶ How to get your cookie on iPad / iPhone</summary>
-          <div class="help-body">
-            <ol>
-              <li>Open <strong>nytimes.com</strong> in Safari and log in.</li>
-              <li>Add the bookmarklet below to your bookmarks.</li>
-              <li>Open the bookmarklet while on any nytimes.com page — it will show your <strong>NYT-S</strong> cookie value.</li>
-              <li>Copy that value and paste it above.</li>
-            </ol>
-            <div class="bookmarklet-box" id="bm-code">javascript:(function(){var c=document.cookie.match(/NYT-S=([^;]+)/);if(c){prompt('Copy your NYT-S cookie:',c[1]);}else{alert('Cookie not found — make sure you are logged in to nytimes.com');}})();</div>
-            <button type="button" class="copy-btn" onclick="copyBookmarklet()">Copy bookmarklet</button>
-            <p style="margin-top:.5rem;font-size:.78rem;color:#888">
-              On desktop: drag the bookmarklet text to your bookmarks bar.<br>
-              On iPad/iPhone: paste it into a bookmark URL field.
-            </p>
-          </div>
-        </details>
+        <p class="hint">
+          Saved in your browser — you only need to enter this once.
+          <a href="#" onclick="clearCookie(event)" style="color:#c0392b">Clear saved cookie</a>
+        </p>
       </div>
 
       <div class="field">
@@ -251,7 +310,6 @@
       {% endif %}
     </h2>
 
-    <!-- Grid -->
     <div class="grid-wrap">
       <table class="grid" aria-label="Crossword grid">
         {% for row in grid %}
@@ -270,7 +328,6 @@
       </table>
     </div>
 
-    <!-- Answers -->
     <div class="col2">
       <div>
         <h2>Across</h2>
@@ -310,24 +367,106 @@
 </div><!-- /container -->
 
 <script>
+  // ------------------------------------------------------------------
+  // Cookie persistence via localStorage
+  // ------------------------------------------------------------------
+  const STORAGE_KEY = 'nyt_solver_cookie';
+
+  function loadSavedCookie() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const field = document.getElementById('cookie');
+    if (saved && !field.value) field.value = saved;
+  }
+
+  function saveCookie() {
+    const val = document.getElementById('cookie').value.trim();
+    if (val) localStorage.setItem(STORAGE_KEY, val);
+  }
+
+  function clearCookie(e) {
+    e.preventDefault();
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('cookie').value = '';
+  }
+
+  // ------------------------------------------------------------------
+  // URL hash: bookmarklet passes cookie as #<value> so it never hits
+  // server logs. If present, pre-fill and optionally auto-solve.
+  // ------------------------------------------------------------------
+  function handleHash() {
+    if (!location.hash || location.hash.length <= 1) return;
+    const cookie = decodeURIComponent(location.hash.slice(1));
+    history.replaceState(null, '', location.pathname); // clean URL
+    document.getElementById('cookie').value = cookie;
+    localStorage.setItem(STORAGE_KEY, cookie);
+    // Auto-solve: show loading then submit
+    document.getElementById('loading-msg').textContent = 'Cookie received — solving…';
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('solve-btn').disabled = true;
+    document.getElementById('solve-form').submit();
+  }
+
+  // ------------------------------------------------------------------
+  // Bookmarklet generator — uses the current app's origin so it works
+  // for any Replit URL, local dev, etc.
+  // ------------------------------------------------------------------
+  function buildBookmarklet() {
+    const appUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
+    // Minified JS that reads NYT-S and opens this app with the hash
+    const code = `javascript:(function(){`
+      + `var c=document.cookie.match(/NYT-S=([^;]+)/);`
+      + `if(c){window.open('${appUrl}/#'+encodeURIComponent(c[1]),'_blank');}else{`
+      + `alert('NYT-S cookie not found — make sure you are logged in to nytimes.com');}`
+      + `})();`;
+    return code;
+  }
+
+  function renderBookmarklet() {
+    document.getElementById('bm-display').textContent = buildBookmarklet();
+  }
+
+  function copyBookmarklet() {
+    navigator.clipboard.writeText(buildBookmarklet()).then(() => {
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = orig, 1800);
+    });
+  }
+
+  // "Test it here" — simulates what the bookmarklet does, but from
+  // within the app itself (reads from the cookie field or localStorage).
+  function testBookmarklet() {
+    const cookie = document.getElementById('cookie').value.trim()
+                || localStorage.getItem(STORAGE_KEY) || '';
+    if (!cookie) {
+      alert('Enter your NYT-S cookie in the field below first, then click Test.');
+      return;
+    }
+    location.hash = encodeURIComponent(cookie);
+    handleHash();
+  }
+
+  // ------------------------------------------------------------------
+  // Solve form — show loading overlay and save cookie
+  // ------------------------------------------------------------------
+  document.getElementById('solve-form').addEventListener('submit', function () {
+    saveCookie();
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('solve-btn').disabled = true;
+  });
+
   function toggleCookie() {
     const f = document.getElementById('cookie');
     f.type = f.type === 'password' ? 'text' : 'password';
   }
 
-  function copyBookmarklet() {
-    const text = document.getElementById('bm-code').textContent;
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = event.target;
-      btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = 'Copy bookmarklet', 1500);
-    });
-  }
-
-  document.getElementById('solve-form').addEventListener('submit', function () {
-    document.getElementById('loading').classList.add('show');
-    document.getElementById('solve-btn').disabled = true;
-  });
+  // ------------------------------------------------------------------
+  // Init
+  // ------------------------------------------------------------------
+  loadSavedCookie();
+  renderBookmarklet();
+  handleHash();   // auto-solve if bookmarklet opened this page
 </script>
 </body>
 </html>
