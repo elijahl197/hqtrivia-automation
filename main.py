@@ -67,8 +67,8 @@ def solve():
         solver.solve(max_iterations=5)
     except SystemExit as e:
         sys.stdout = old_stdout
-        return render_template('index.html', today=today,
-                               error=str(e) or 'Invalid cookie or network error.')
+        msg = buf.getvalue().strip().replace('ERROR: ', '') or str(e) or 'Network or auth error.'
+        return render_template('index.html', today=today, error=msg)
     except Exception as e:
         sys.stdout = old_stdout
         return render_template('index.html', today=today, error=str(e))

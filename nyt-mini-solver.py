@@ -119,7 +119,7 @@ class NYTMiniSolver:
     """
 
     def __init__(self, verbose=False):
-        self.client = anthropic.Anthropic()
+        self.client = anthropic.Anthropic(timeout=30.0)
         self.grid = CrosswordGrid()
 
         # clue dicts:  str(number) -> {clue, row, col, length}
@@ -171,11 +171,22 @@ class NYTMiniSolver:
         resp = requests.get(url, headers=headers, timeout=10)
 
         if resp.status_code == 401:
-            print("ERROR: NYT returned 401 – a valid NYT-S cookie is required.")
-            sys.exit(1)
+            raise RuntimeError(
+                'NYT returned 401 — your NYT-S cookie is missing or expired. '
+                'Log in at nytimes.com, copy the NYT-S cookie, and paste it above.'
+            )
+        if resp.status_code == 404:
+            raise RuntimeError(f'No Mini puzzle found for {puzzle_date}.')
         resp.raise_for_status()
 
-        self._parse_nyt_response(resp.json())
+        try:
+            data = resp.json()
+        except Exception:
+            raise RuntimeError(
+                'NYT returned an unexpected response (possibly a login redirect). '
+                'Make sure you are logged in and your NYT-S cookie is valid.'
+            )
+        self._parse_nyt_response(data)
 
     def _parse_nyt_response(self, data: dict):
         """Translate the raw NYT API JSON into grid + clue structures."""
