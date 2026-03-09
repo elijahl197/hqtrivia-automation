@@ -1,53 +1,110 @@
-# hqtrivia-automation (WIP)
-I vaguely wondered about the HQ trivia game and automating to get an edge in the game since there is nothing stopping you from googling for answers. Why not automate it in effort to learn? Well here's my attempt...
+# NYT Mini Crossword Solver
 
-Note using this during live game would break HQ's terms of service. So if you want to play around with it like I did, just take snapshots of the question and use after game. DO NOT USE TO CHEAT!!! Made for educational purposes only!!!
+Automates solving the NYT Mini crossword using Claude AI.
 
-# Work Flow
-1. Capture source image either via quicktime player (recommended) or webcam (untested). If using quicktime you can do a movie recording without actually recording. Just hit the drop down arrow by the record button to select iPhone as source (iPhone must be connected by wire).
+> **Educational / personal use only.** Solving the puzzle yourself is more fun.
 
-2. Choose either Google Tesseract OCR (free/open source) or Google Vision API (free but requires billing account and has limits). Note that Vision API is generally better.
+---
 
-3. Text is parsed into question and answers. The answers are then searched wikipedia, multiple dictionaries and synonyms are looked up too. NOTE: More will be added soon. Finally, searches that have more relevancy with the question are scored higher. The answer that scores the highest is shown. NOTE: All of this is done in a multiprocessing pool to speed up results.
+## How it works
 
-4. Display the results on screen.
+The design follows the same pipeline as the original HQ Trivia automation:
 
-# Installation
-Use python 3.6 and take notice of the modules used in the python file. In particular the packages used are...
+| Step | HQ Trivia (original) | NYT Mini (this project) |
+|------|----------------------|-------------------------|
+| **Capture** | Screenshot via QuickTime / webcam + OCR | Fetch puzzle JSON from NYT API *or* load from file |
+| **Parse** | Extract question + 3 answer choices from OCR text | Build a 5×5 grid + clue list from puzzle data |
+| **Lookup** | Wikipedia / Google / dictionary keyword search | Claude AI solves each clue, using crossing letters as hints |
+| **Display** | Print highest-scoring answer | Print completed grid + answer list |
 
-* Pillow - Image manipulation
-* numpy - More advanced image manipulation
-* PyObjC - AppleScript for taking screenshot
-* opencv-contrib-python - WebCam for taking screenshot
-* wikipediaapi - Wikipedia searches
-* vocabulary - Dictionary and synonyms searches
-* pytesseract - Google's free/open source OCR (requires seperate installtion)
-* google-cloud-vision - Google's commercial OCR (free also but with limits and additional setup)
-* nltk - local dictionary
-* beautifulsoup4 - parse google searches
+### Constraint propagation
 
-*Oversimplified steps*
-1. Install python 3.6
-2. Install above packages
-    * `pip3 install -r requirements.txt`
-3. For nltk run *python3 -m nltk.downloader all*
+Crossword answers intersect — a letter placed by one answer becomes a hint for the crossing answer. The solver iterates:
 
-# Usage
-Simply execute script with the right options...
+1. Send all unsolved clues to Claude, including any letters already placed (e.g. pattern `R_VEN`).
+2. Place valid answers and update the grid.
+3. Repeat with the newly filled-in crossing letters until the grid is complete or no more progress is made.
+
+---
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+You also need an Anthropic API key:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
+---
+
+## Usage
 
 ```
-$ python3 hqtrivia-automation.py -h
-usage: hqtrivia-automation.py [-h] [-q | -w | -i INPUT] [-v] [-V]
-
-Automate searching for answers in HQ Trivia
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -q, --quicktime       Use quicktime to capture source image
-  -w, --webcam          Use webcam to capture source image
-  -i INPUT, --input INPUT
-                        Use image provided instead of capturing
-  -v, --verbose         Spit out debug information
-  -V, --version         Version of script
+python3 nyt-mini-solver.py [-h] (--nyt-cookie COOKIE | --json FILE | --interactive)
+                            [--date YYYY-MM-DD] [--iterations N] [-v] [-V]
 ```
-NOTE: Have to select -q, -w or use -i
+
+### Option 1 — Auto-fetch today's puzzle (requires NYT subscription)
+
+1. Log in to [nytimes.com](https://www.nytimes.com).
+2. Open DevTools → Application → Cookies → copy the value of **NYT-S**.
+3. Run:
+
+```bash
+python3 nyt-mini-solver.py --nyt-cookie <NYT-S value>
+```
+
+Optionally specify a date:
+
+```bash
+python3 nyt-mini-solver.py --nyt-cookie <NYT-S value> --date 2024-06-15
+```
+
+### Option 2 — Load from a JSON file
+
+```bash
+python3 nyt-mini-solver.py --json example_puzzle.json
+```
+
+JSON format:
+
+```json
+{
+  "size": 5,
+  "black_squares": [[0, 3], [1, 3]],
+  "across": {
+    "1": {"clue": "Clue text", "row": 0, "col": 0, "length": 3}
+  },
+  "down": {
+    "1": {"clue": "Clue text", "row": 0, "col": 0, "length": 5}
+  }
+}
+```
+
+See `example_puzzle.json` for a complete working example.
+
+### Option 3 — Interactive entry
+
+```bash
+python3 nyt-mini-solver.py --interactive
+```
+
+Follow the prompts to enter the grid size, black squares, and clues.
+
+---
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--nyt-cookie COOKIE` | NYT-S session cookie for auto-fetching |
+| `--json FILE` | Load puzzle from JSON file |
+| `--interactive` | Enter clues manually |
+| `--date YYYY-MM-DD` | Puzzle date (with `--nyt-cookie`, default: today) |
+| `--iterations N` | Max solving iterations (default: 5) |
+| `-v` / `--verbose` | Debug output |
+| `-V` / `--version` | Print version |
