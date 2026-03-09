@@ -158,6 +158,10 @@ class NYTMiniSolver:
         url = f'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{puzzle_date}.json'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.nytimes.com/crosswords/game/mini',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'X-Requested-With': 'XMLHttpRequest',
         }
 
         # If a cookie was supplied, attach it; otherwise try without auth first
@@ -170,9 +174,9 @@ class NYTMiniSolver:
         print(f"Fetching NYT Mini for {puzzle_date}…")
         resp = requests.get(url, headers=headers, timeout=10)
 
-        if resp.status_code == 401:
+        if resp.status_code in (401, 403):
             raise RuntimeError(
-                'NYT returned 401 — your NYT-S cookie is missing or expired. '
+                f'NYT returned {resp.status_code} — your NYT-S cookie is missing or expired. '
                 'Log in at nytimes.com, copy the NYT-S cookie, and paste it above.'
             )
         if resp.status_code == 404:
