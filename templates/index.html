@@ -275,13 +275,13 @@
         <label for="cookie">NYT-S Cookie</label>
         <div class="cookie-wrap">
           <input type="password" id="cookie" name="cookie"
-                 placeholder="Paste your NYT-S cookie value here"
-                 value="{{ cookie or '' }}" autocomplete="off" required>
+                 placeholder="Optional — leave blank to try without login"
+                 value="{{ cookie or '' }}" autocomplete="off">
           <button type="button" class="toggle-eye" aria-label="Show/hide cookie"
                   onclick="toggleCookie()">👁</button>
         </div>
         <p class="hint">
-          Saved in your browser — you only need to enter this once.
+          Leave blank — the solver will try without a cookie first. Only needed if you get an auth error.
           <a href="#" onclick="clearCookie(event)" style="color:#c0392b">Clear saved cookie</a>
         </p>
       </div>

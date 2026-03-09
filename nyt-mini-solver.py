@@ -119,7 +119,7 @@ class NYTMiniSolver:
     """
 
     def __init__(self, verbose=False):
-        self.client = anthropic.Anthropic()
+        self.client = anthropic.Anthropic(timeout=30.0)
         self.grid = CrosswordGrid()
 
         # clue dicts:  str(number) -> {clue, row, col, length}
@@ -144,36 +144,49 @@ class NYTMiniSolver:
     # Input: NYT API                                                       #
     # ------------------------------------------------------------------ #
 
-    def fetch_nyt_puzzle(self, cookie: str, puzzle_date: str = None):
+    def fetch_nyt_puzzle(self, cookie: str = None, puzzle_date: str = None):
         """
         Fetch a Mini puzzle from the NYT crossword API.
 
         Args:
-            cookie:      The value of the NYT-S session cookie.
+            cookie:      The value of the NYT-S session cookie (optional — tried without first).
             puzzle_date: ISO date string (YYYY-MM-DD).  Defaults to today.
         """
         if puzzle_date is None:
             puzzle_date = date.today().strftime('%Y-%m-%d')
 
-        # Strip "NYT-S=" prefix in case the user pasted the full cookie string
-        if cookie.startswith('NYT-S='):
-            cookie = cookie[len('NYT-S='):]
-
         url = f'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{puzzle_date}.json'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Cookie': f'NYT-S={cookie}',
         }
+
+        # If a cookie was supplied, attach it; otherwise try without auth first
+        if cookie:
+            # Strip "NYT-S=" prefix in case the user pasted the full cookie string
+            if cookie.startswith('NYT-S='):
+                cookie = cookie[len('NYT-S='):]
+            headers['Cookie'] = f'NYT-S={cookie}'
 
         print(f"Fetching NYT Mini for {puzzle_date}…")
         resp = requests.get(url, headers=headers, timeout=10)
 
         if resp.status_code == 401:
-            print("ERROR: NYT returned 401 – check your NYT-S cookie value.")
-            sys.exit(1)
+            raise RuntimeError(
+                'NYT returned 401 — your NYT-S cookie is missing or expired. '
+                'Log in at nytimes.com, copy the NYT-S cookie, and paste it above.'
+            )
+        if resp.status_code == 404:
+            raise RuntimeError(f'No Mini puzzle found for {puzzle_date}.')
         resp.raise_for_status()
 
-        self._parse_nyt_response(resp.json())
+        try:
+            data = resp.json()
+        except Exception:
+            raise RuntimeError(
+                'NYT returned an unexpected response (possibly a login redirect). '
+                'Make sure you are logged in and your NYT-S cookie is valid.'
+            )
+        self._parse_nyt_response(data)
 
     def _parse_nyt_response(self, data: dict):
         """Translate the raw NYT API JSON into grid + clue structures."""
