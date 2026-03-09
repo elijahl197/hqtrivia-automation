@@ -1,0 +1,19 @@
+{
+  "_comment": "Example NYT Mini-style 5x5 puzzle (no black squares). Answers: GRACE/RAMEN/ANVIL/CABIN/ELBOW across; GRACE/RANCH/ANIME/CIVIL/ELBOW down — illustrative only, not a real NYT puzzle.",
+  "size": 5,
+  "black_squares": [],
+  "across": {
+    "1":  {"clue": "Elegance and poise",            "row": 0, "col": 0, "length": 5},
+    "6":  {"clue": "Japanese noodle soup",           "row": 1, "col": 0, "length": 5},
+    "7":  {"clue": "Blacksmith's heavy block",       "row": 2, "col": 0, "length": 5},
+    "8":  {"clue": "Small rustic shelter",           "row": 3, "col": 0, "length": 5},
+    "9":  {"clue": "Arm joint",                      "row": 4, "col": 0, "length": 5}
+  },
+  "down": {
+    "1":  {"clue": "Before-meal prayer, informally", "row": 0, "col": 0, "length": 5},
+    "2":  {"clue": "Big cattle farm",                "row": 0, "col": 1, "length": 5},
+    "3":  {"clue": "Japanese animation style",       "row": 0, "col": 2, "length": 5},
+    "4":  {"clue": "Polite and well-mannered",       "row": 0, "col": 3, "length": 5},
+    "5":  {"clue": "Arm joint (see 9-Across)",       "row": 0, "col": 4, "length": 5}
+  }
+}
