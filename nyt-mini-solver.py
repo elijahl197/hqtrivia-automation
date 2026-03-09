@@ -11,7 +11,8 @@ Workflow (mirrors the original HQ Trivia automation):
   4. DISPLAY  – print the completed grid and every answer
 
 Usage:
-    python3 nyt-mini-solver.py --nyt-cookie <NYT-S cookie>
+    python3 nyt-mini-solver.py --auto-cookie          # browser login, cookie cached automatically
+    python3 nyt-mini-solver.py --nyt-cookie <NYT-S>   # supply cookie manually
     python3 nyt-mini-solver.py --json example_puzzle.json
     python3 nyt-mini-solver.py --interactive
 """
@@ -154,9 +155,13 @@ class NYTMiniSolver:
         if puzzle_date is None:
             puzzle_date = date.today().strftime('%Y-%m-%d')
 
-        url = f'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini.json'
+        # Strip "NYT-S=" prefix in case the user pasted the full cookie string
+        if cookie.startswith('NYT-S='):
+            cookie = cookie[len('NYT-S='):]
+
+        url = f'https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/{puzzle_date}.json'
         headers = {
-            'User-Agent': 'Mozilla/5.0 (compatible; NYTMiniSolver/1.0)',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Cookie': f'NYT-S={cookie}',
         }
 
@@ -491,6 +496,13 @@ Examples:
 
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument(
+        '--auto-cookie', action='store_true',
+        help=(
+            "Auto-extract the NYT-S cookie via a browser window (opens once, "
+            "then caches to ~/.nyt_mini_cookie for future runs)"
+        ),
+    )
+    source.add_argument(
         '--nyt-cookie', metavar='COOKIE',
         help="Value of your NYT-S session cookie (log in to nytimes.com and copy it)",
     )
@@ -501,6 +513,11 @@ Examples:
     source.add_argument(
         '--interactive', action='store_true',
         help="Enter puzzle clues manually via prompts",
+    )
+
+    parser.add_argument(
+        '--refresh-cookie', action='store_true',
+        help="Force a new browser login even if a cached cookie exists (use with --auto-cookie)",
     )
 
     parser.add_argument(
@@ -528,7 +545,11 @@ Examples:
 
     solver = NYTMiniSolver(verbose=opts.verbose)
 
-    if opts.nyt_cookie:
+    if opts.auto_cookie:
+        from cookie_manager import get_cookie
+        cookie = get_cookie(force_refresh=opts.refresh_cookie)
+        solver.fetch_nyt_puzzle(cookie=cookie, puzzle_date=opts.date)
+    elif opts.nyt_cookie:
         solver.fetch_nyt_puzzle(cookie=opts.nyt_cookie, puzzle_date=opts.date)
     elif opts.json:
         print(f"Loading puzzle from {opts.json}…")

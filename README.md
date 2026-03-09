@@ -6,6 +6,24 @@ Automates solving the NYT Mini crossword using Claude AI.
 
 ---
 
+## Replit web app (recommended for iPad)
+
+Import this repo into [Replit](https://replit.com), set `ANTHROPIC_API_KEY` as a
+Secret, then click **Run**.  A mobile-friendly web UI opens in the Replit browser
+pane — paste your NYT-S cookie, pick a date, and hit **Solve**.
+
+### Getting your NYT-S cookie on iPad
+
+1. Open **nytimes.com** in Safari and log in.
+2. Create a bookmark, edit its URL, and paste the bookmarklet below as the URL.
+3. Run the bookmarklet on any nytimes.com page — it will show your **NYT-S** value.
+
+```
+javascript:(function(){var c=document.cookie.match(/NYT-S=([^;]+)/);if(c){prompt('Copy your NYT-S cookie:',c[1]);}else{alert('Cookie not found — make sure you are logged in to nytimes.com');}})();
+```
+
+---
+
 ## How it works
 
 The design follows the same pipeline as the original HQ Trivia automation:
@@ -31,6 +49,7 @@ Crossword answers intersect — a letter placed by one answer becomes a hint for
 
 ```bash
 pip install -r requirements.txt
+playwright install chromium   # one-time browser download
 ```
 
 You also need an Anthropic API key:
@@ -44,11 +63,33 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ## Usage
 
 ```
-python3 nyt-mini-solver.py [-h] (--nyt-cookie COOKIE | --json FILE | --interactive)
-                            [--date YYYY-MM-DD] [--iterations N] [-v] [-V]
+python3 nyt-mini-solver.py [-h] (--auto-cookie | --nyt-cookie COOKIE | --json FILE | --interactive)
+                            [--date YYYY-MM-DD] [--refresh-cookie] [--iterations N] [-v] [-V]
 ```
 
-### Option 1 — Auto-fetch today's puzzle (requires NYT subscription)
+### Option 1 — Fully automated (requires NYT subscription)
+
+```bash
+python3 nyt-mini-solver.py --auto-cookie
+```
+
+On first run a Chromium window opens so you can log in to nytimes.com.
+The NYT-S cookie is extracted automatically and cached to `~/.nyt_mini_cookie`.
+All subsequent runs reuse the cached cookie — no DevTools required.
+
+Optionally specify a date:
+
+```bash
+python3 nyt-mini-solver.py --auto-cookie --date 2024-06-15
+```
+
+Force a fresh login (e.g. after your session expires):
+
+```bash
+python3 nyt-mini-solver.py --auto-cookie --refresh-cookie
+```
+
+### Option 2 — Manual cookie (requires NYT subscription)
 
 1. Log in to [nytimes.com](https://www.nytimes.com).
 2. Open DevTools → Application → Cookies → copy the value of **NYT-S**.
@@ -58,13 +99,7 @@ python3 nyt-mini-solver.py [-h] (--nyt-cookie COOKIE | --json FILE | --interacti
 python3 nyt-mini-solver.py --nyt-cookie <NYT-S value>
 ```
 
-Optionally specify a date:
-
-```bash
-python3 nyt-mini-solver.py --nyt-cookie <NYT-S value> --date 2024-06-15
-```
-
-### Option 2 — Load from a JSON file
+### Option 3 — Load from a JSON file
 
 ```bash
 python3 nyt-mini-solver.py --json example_puzzle.json
@@ -87,7 +122,7 @@ JSON format:
 
 See `example_puzzle.json` for a complete working example.
 
-### Option 3 — Interactive entry
+### Option 4 — Interactive entry
 
 ```bash
 python3 nyt-mini-solver.py --interactive
@@ -101,10 +136,12 @@ Follow the prompts to enter the grid size, black squares, and clues.
 
 | Flag | Description |
 |------|-------------|
-| `--nyt-cookie COOKIE` | NYT-S session cookie for auto-fetching |
+| `--auto-cookie` | Open browser once, extract & cache NYT-S cookie automatically |
+| `--nyt-cookie COOKIE` | Supply NYT-S session cookie manually |
 | `--json FILE` | Load puzzle from JSON file |
 | `--interactive` | Enter clues manually |
-| `--date YYYY-MM-DD` | Puzzle date (with `--nyt-cookie`, default: today) |
+| `--date YYYY-MM-DD` | Puzzle date (default: today, used with `--auto-cookie` / `--nyt-cookie`) |
+| `--refresh-cookie` | Force a new browser login (use with `--auto-cookie`) |
 | `--iterations N` | Max solving iterations (default: 5) |
 | `-v` / `--verbose` | Debug output |
 | `-V` / `--version` | Print version |
