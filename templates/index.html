@@ -232,14 +232,14 @@
   <div class="bm-card" id="bookmarklet-section">
     <h2>One-click solver bookmarklet</h2>
     <p>
-      Add this bookmarklet to your browser. After logging in to nytimes.com,
-      click it once — it opens this app with your cookie already filled in and
-      <strong>starts solving automatically</strong>.
+      Add this bookmarklet to your browser. While logged in to nytimes.com,
+      click it once — it fetches the puzzle directly from your browser and
+      <strong>solves it automatically</strong>. No cookie needed.
     </p>
     <ol class="bm-steps">
       <li>Click <strong>Copy bookmarklet</strong> below.</li>
       <li>Create a new bookmark in your browser and paste it as the <strong>URL</strong>.</li>
-      <li>On any nytimes.com page, click the bookmark → puzzle solves instantly.</li>
+      <li>On any nytimes.com page (while logged in), click the bookmark → puzzle solves in a new tab.</li>
     </ol>
 
     <div class="bm-link-wrap" id="bm-display">Generating…</div>
@@ -248,8 +248,8 @@
       <button class="bm-btn" onclick="testBookmarklet()">Test it here</button>
     </div>
     <p class="bm-note">
-      The bookmarklet reads your NYT-S cookie from the browser and sends it to
-      this app via the URL hash — it never appears in server logs.
+      The bookmarklet fetches the puzzle JSON on nytimes.com (using your existing login)
+      and POSTs it directly to this app — no cookie is ever sent to our server.
     </p>
 
     <details>
@@ -390,20 +390,14 @@
   }
 
   // ------------------------------------------------------------------
-  // URL hash: bookmarklet passes cookie as #<value> so it never hits
-  // server logs. If present, pre-fill and optionally auto-solve.
+  // URL hash: legacy cookie-passing (kept for backwards compat)
   // ------------------------------------------------------------------
   function handleHash() {
     if (!location.hash || location.hash.length <= 1) return;
     const cookie = decodeURIComponent(location.hash.slice(1));
-    history.replaceState(null, '', location.pathname); // clean URL
+    history.replaceState(null, '', location.pathname);
     document.getElementById('cookie').value = cookie;
     localStorage.setItem(STORAGE_KEY, cookie);
-    // Auto-solve: show loading then submit
-    document.getElementById('loading-msg').textContent = 'Cookie received — solving…';
-    document.getElementById('loading').classList.add('show');
-    document.getElementById('solve-btn').disabled = true;
-    document.getElementById('solve-form').submit();
   }
 
   // ------------------------------------------------------------------
@@ -412,11 +406,19 @@
   // ------------------------------------------------------------------
   function buildBookmarklet() {
     const appUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
-    // Minified JS that reads NYT-S and opens this app with the hash
+    // Fetches the puzzle JSON directly on nytimes.com (same-origin, no CORS/IP block),
+    // then POSTs it to our /solve-json endpoint in a new tab.
     const code = `javascript:(function(){`
-      + `var c=document.cookie.match(/NYT-S=([^;]+)/);`
-      + `if(c){window.open('${appUrl}/#'+encodeURIComponent(c[1]),'_blank');}else{`
-      + `alert('NYT-S cookie not found — make sure you are logged in to nytimes.com');}`
+      + `var d=new Date().toISOString().split('T')[0];`
+      + `fetch('https://www.nytimes.com/svc/crosswords/v6/puzzle/mini/'+d+'.json',{credentials:'include'})`
+      + `.then(function(r){if(!r.ok)throw new Error('NYT returned '+r.status);return r.json();})`
+      + `.then(function(data){`
+      +   `var f=document.createElement('form');`
+      +   `f.method='POST';f.action='${appUrl}/solve-json';f.target='_blank';`
+      +   `var i=document.createElement('input');`
+      +   `i.type='hidden';i.name='puzzle_json';i.value=JSON.stringify(data);`
+      +   `f.appendChild(i);document.body.appendChild(f);f.submit();`
+      + `}).catch(function(e){alert('Could not fetch puzzle: '+e.message);});`
       + `})();`;
     return code;
   }
@@ -434,17 +436,14 @@
     });
   }
 
-  // "Test it here" — simulates what the bookmarklet does, but from
-  // within the app itself (reads from the cookie field or localStorage).
+  // "Test it here" — runs the bookmarklet code in the current tab
+  // (only works if you're already on nytimes.com).
   function testBookmarklet() {
-    const cookie = document.getElementById('cookie').value.trim()
-                || localStorage.getItem(STORAGE_KEY) || '';
-    if (!cookie) {
-      alert('Enter your NYT-S cookie in the field below first, then click Test.');
+    if (!location.hostname.includes('nytimes.com')) {
+      alert('Open this bookmarklet from a nytimes.com page while logged in.');
       return;
     }
-    location.hash = encodeURIComponent(cookie);
-    handleHash();
+    eval(buildBookmarklet().replace(/^javascript:/, ''));
   }
 
   // ------------------------------------------------------------------
