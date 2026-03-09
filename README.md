@@ -6,6 +6,24 @@ Automates solving the NYT Mini crossword using Claude AI.
 
 ---
 
+## Replit web app (recommended for iPad)
+
+Import this repo into [Replit](https://replit.com), set `ANTHROPIC_API_KEY` as a
+Secret, then click **Run**.  A mobile-friendly web UI opens in the Replit browser
+pane — paste your NYT-S cookie, pick a date, and hit **Solve**.
+
+### Getting your NYT-S cookie on iPad
+
+1. Open **nytimes.com** in Safari and log in.
+2. Create a bookmark, edit its URL, and paste the bookmarklet below as the URL.
+3. Run the bookmarklet on any nytimes.com page — it will show your **NYT-S** value.
+
+```
+javascript:(function(){var c=document.cookie.match(/NYT-S=([^;]+)/);if(c){prompt('Copy your NYT-S cookie:',c[1]);}else{alert('Cookie not found — make sure you are logged in to nytimes.com');}})();
+```
+
+---
+
 ## How it works
 
 The design follows the same pipeline as the original HQ Trivia automation:
