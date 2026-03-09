@@ -43,7 +43,7 @@ def index():
     return render_template('index.html', today=today)
 
 
-def _run_solver_and_render(solver, today, cookie='', puzzle_date=None):
+def _run_solver_and_render(solver, today, cookie='', puzzle_date=None, show_grid=True):
     """Run solve loop and return a rendered template response."""
     buf = io.StringIO()
     old_stdout = sys.stdout
@@ -87,7 +87,7 @@ def _run_solver_and_render(solver, today, cookie='', puzzle_date=None):
         today       = today,
         cookie      = cookie,
         puzzle_date = puzzle_date or today,
-        grid        = solver.grid.cells,
+        grid        = solver.grid.cells if show_grid else None,
         across      = across_results,
         down        = down_results,
         log         = log_output,
@@ -156,6 +156,55 @@ def solve_json():
         return render_template('index.html', today=today, error=str(e))
 
     return _run_solver_and_render(solver, today)
+
+
+@app.route('/solve-manual', methods=['POST'])
+def solve_manual():
+    """
+    Accept manually entered clues (no NYT fetch needed).
+    Positions are faked in a large grid so clues don't overlap;
+    the grid is not displayed since positions are arbitrary.
+    """
+    today = date.today().strftime('%Y-%m-%d')
+
+    across_nums  = request.form.getlist('across_num')
+    across_clues = request.form.getlist('across_clue')
+    across_lens  = request.form.getlist('across_len')
+    down_nums    = request.form.getlist('down_num')
+    down_clues   = request.form.getlist('down_clue')
+    down_lens    = request.form.getlist('down_len')
+
+    solver = NYTMiniSolver(verbose=False)
+    # Use a large grid so fake positions never go out of bounds
+    solver.grid = _solver_mod.CrosswordGrid(60, 60)
+
+    # Space across clues on separate rows so nothing overlaps
+    for i, (num, clue, length) in enumerate(zip(across_nums, across_clues, across_lens)):
+        num = num.strip(); clue = clue.strip()
+        if not num or not clue:
+            continue
+        try:
+            length = int(length)
+        except (ValueError, TypeError):
+            length = 5
+        solver.across[num] = {'clue': clue, 'row': i * 2, 'col': 0, 'length': length}
+
+    # Space down clues on separate columns
+    for i, (num, clue, length) in enumerate(zip(down_nums, down_clues, down_lens)):
+        num = num.strip(); clue = clue.strip()
+        if not num or not clue:
+            continue
+        try:
+            length = int(length)
+        except (ValueError, TypeError):
+            length = 5
+        solver.down[num] = {'clue': clue, 'row': 0, 'col': i * 2, 'length': length}
+
+    if not solver.across and not solver.down:
+        return render_template('index.html', today=today,
+                               error='Please enter at least one clue.')
+
+    return _run_solver_and_render(solver, today, show_grid=False)
 
 
 if __name__ == '__main__':

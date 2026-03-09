@@ -179,6 +179,47 @@
     .col2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     @media (max-width: 480px) { .col2 { grid-template-columns: 1fr; } }
 
+    /* ---- tabs ---- */
+    .tabs { display: flex; gap: .4rem; margin-bottom: 1rem; }
+    .tab-btn {
+      flex: 1; padding: .55rem .5rem;
+      border: 1.5px solid #d8d8d8; border-radius: 9px;
+      background: #fff; color: #666;
+      font-size: .88rem; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .tab-btn.active {
+      background: #1a1a1a; color: #fff; border-color: #1a1a1a;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ---- manual clue table ---- */
+    .clue-table { width: 100%; border-collapse: collapse; margin-bottom: .75rem; }
+    .clue-table th {
+      text-align: left; font-size: .78rem; color: #888;
+      font-weight: 500; padding: .2rem .3rem .4rem;
+    }
+    .clue-table td { padding: .2rem .2rem; vertical-align: middle; }
+    .clue-table input[type="number"] { width: 52px; padding: .5rem .4rem; }
+    .clue-table input[type="text"]   { padding: .5rem .5rem; }
+    .remove-row-btn {
+      background: none; border: none; color: #c0392b;
+      font-size: 1.1rem; cursor: pointer; padding: .2rem .4rem;
+      line-height: 1;
+    }
+    .add-row-btn {
+      background: none; border: 1.5px dashed #d0d0d0;
+      border-radius: 8px; color: #888; font-size: .82rem;
+      padding: .4rem .8rem; cursor: pointer; width: 100%;
+      margin-bottom: .75rem; transition: border-color .15s;
+    }
+    .add-row-btn:hover { border-color: #aaa; color: #444; }
+    .section-label {
+      font-size: .85rem; font-weight: 600; color: #444;
+      margin: .75rem 0 .3rem;
+    }
+
     /* ---- log ---- */
     .log-pre {
       background: #1a1a1a; color: #d4d4d4;
@@ -266,40 +307,89 @@
   </div>
 
   <!-- ------------------------------------------------------------------ -->
-  <!-- Form                                                                 -->
+  <!-- Tabs                                                                -->
   <!-- ------------------------------------------------------------------ -->
-  <div class="card">
-    <form method="post" action="/solve" id="solve-form">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('auto', this)">Auto-solve</button>
+    <button class="tab-btn" onclick="switchTab('manual', this)">Enter clues manually</button>
+  </div>
 
-      <div class="field">
-        <label for="cookie">NYT-S Cookie</label>
-        <div class="cookie-wrap">
-          <input type="password" id="cookie" name="cookie"
-                 placeholder="Optional — leave blank to try without login"
-                 value="{{ cookie or '' }}" autocomplete="off">
-          <button type="button" class="toggle-eye" aria-label="Show/hide cookie"
-                  onclick="toggleCookie()">👁</button>
+  <!-- Auto-solve tab -->
+  <div class="tab-panel active" id="tab-auto">
+    <div class="card">
+      <form method="post" action="/solve" id="solve-form">
+        <div class="field">
+          <label for="cookie">NYT-S Cookie</label>
+          <div class="cookie-wrap">
+            <input type="password" id="cookie" name="cookie"
+                   placeholder="Optional — leave blank to try without login"
+                   value="{{ cookie or '' }}" autocomplete="off">
+            <button type="button" class="toggle-eye" aria-label="Show/hide cookie"
+                    onclick="toggleCookie()">👁</button>
+          </div>
+          <p class="hint">
+            Leave blank — the solver will try without a cookie first. Only needed if you get an auth error.
+            <a href="#" onclick="clearCookie(event)" style="color:#c0392b">Clear saved cookie</a>
+          </p>
         </div>
-        <p class="hint">
-          Leave blank — the solver will try without a cookie first. Only needed if you get an auth error.
-          <a href="#" onclick="clearCookie(event)" style="color:#c0392b">Clear saved cookie</a>
-        </p>
-      </div>
 
-      <div class="field">
-        <label for="date">Puzzle date <span style="font-weight:400;color:#999">(optional — defaults to today)</span></label>
-        <input type="date" id="date" name="date"
-               value="{{ puzzle_date or today }}" max="{{ today }}">
-      </div>
+        <div class="field">
+          <label for="date">Puzzle date <span style="font-weight:400;color:#999">(optional — defaults to today)</span></label>
+          <input type="date" id="date" name="date"
+                 value="{{ puzzle_date or today }}" max="{{ today }}">
+        </div>
 
-      <button type="submit" class="btn" id="solve-btn">Solve</button>
-    </form>
+        <button type="submit" class="btn" id="solve-btn">Solve</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manual clue entry tab -->
+  <div class="tab-panel" id="tab-manual">
+    <div class="card">
+      <form method="post" action="/solve-manual" id="manual-form">
+
+        <p class="section-label">Across</p>
+        <table class="clue-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th style="width:100%">Clue</th>
+              <th>Len</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="across-body">
+            <!-- rows added by JS -->
+          </tbody>
+        </table>
+        <button type="button" class="add-row-btn" onclick="addRow('across')">+ Add across clue</button>
+
+        <p class="section-label">Down</p>
+        <table class="clue-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th style="width:100%">Clue</th>
+              <th>Len</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="down-body">
+            <!-- rows added by JS -->
+          </tbody>
+        </table>
+        <button type="button" class="add-row-btn" onclick="addRow('down')">+ Add down clue</button>
+
+        <button type="submit" class="btn" id="manual-btn">Solve clues</button>
+      </form>
+    </div>
   </div>
 
   <!-- ------------------------------------------------------------------ -->
   <!-- Results                                                              -->
   <!-- ------------------------------------------------------------------ -->
-  {% if grid is defined %}
+  {% if across is defined %}
   <div class="card">
     <h2>
       Result
@@ -310,6 +400,7 @@
       {% endif %}
     </h2>
 
+    {% if grid %}
     <div class="grid-wrap">
       <table class="grid" aria-label="Crossword grid">
         {% for row in grid %}
@@ -327,6 +418,7 @@
         {% endfor %}
       </table>
     </div>
+    {% endif %}
 
     <div class="col2">
       <div>
@@ -367,6 +459,48 @@
 </div><!-- /container -->
 
 <script>
+  // ------------------------------------------------------------------
+  // Tabs
+  // ------------------------------------------------------------------
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  // ------------------------------------------------------------------
+  // Manual clue rows
+  // ------------------------------------------------------------------
+  function makeRow(dir, num) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" name="${dir}_num" min="1" max="99" value="${num}" style="width:52px" required></td>
+      <td><input type="text" name="${dir}_clue" placeholder="Clue text" style="width:100%" required></td>
+      <td><input type="number" name="${dir}_len" min="2" max="15" value="5" style="width:52px" required></td>
+      <td><button type="button" class="remove-row-btn" onclick="this.closest('tr').remove()">×</button></td>
+    `;
+    return tr;
+  }
+
+  function addRow(dir) {
+    const tbody = document.getElementById(dir + '-body');
+    const next = tbody.querySelectorAll('tr').length + 1;
+    tbody.appendChild(makeRow(dir, next));
+  }
+
+  function initManualForm() {
+    // Start with 5 across + 5 down rows
+    for (let i = 1; i <= 5; i++) addRow('across');
+    for (let i = 1; i <= 5; i++) addRow('down');
+  }
+
+  document.getElementById('manual-form').addEventListener('submit', function () {
+    document.getElementById('loading-msg').textContent = 'Solving… this takes ~20–30 seconds';
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('manual-btn').disabled = true;
+  });
+
   // ------------------------------------------------------------------
   // Cookie persistence via localStorage
   // ------------------------------------------------------------------
@@ -465,7 +599,8 @@
   // ------------------------------------------------------------------
   loadSavedCookie();
   renderBookmarklet();
-  handleHash();   // auto-solve if bookmarklet opened this page
+  handleHash();
+  initManualForm();
 </script>
 </body>
 </html>
